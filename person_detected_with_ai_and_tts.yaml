@@ -43,6 +43,7 @@ blueprint:
         police. If nobody is detected, don't respond.
       selector:
         text:
+          multiline: true
 trigger:
   - platform: state
     entity_id: !input trigger_sensor
