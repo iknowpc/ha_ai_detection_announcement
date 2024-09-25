@@ -1,7 +1,7 @@
 blueprint:
-  name: Person Detected with AI and TTS
+  name: Person Detected with AI and TTS (with 30-Second Check)
   description: >
-    Detect a person, analyze the image with AI, and announce the message using TTS.
+    Detect a person, analyze the image with AI, and announce the message using TTS. After 30 seconds, checks if the person detection sensor is still enabled and sends another message.
   domain: automation
   input:
     trigger_sensor:
@@ -44,6 +44,15 @@ blueprint:
       selector:
         text:
           multiline: true
+    second_message:
+      name: Second Message
+      description: >
+        The second message to announce after 30 seconds if the sensor is still on.
+      default: >
+        You are still trespassing, and the authorities have been contacted. Leave the premises immediately.
+      selector:
+        text:
+          multiline: true
 trigger:
   - platform: state
     entity_id: !input trigger_sensor
@@ -76,4 +85,19 @@ action:
       options:
         gender: MALE
         voice: en-US-Casual-K
+  - delay: "00:00:30"  # Wait for 30 seconds
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input trigger_sensor
+            state: "on"  # Check if the sensor is still on
+        sequence:
+          - service: tts.google_cloud_say
+            data:
+              entity_id: !input media_player_entity
+              message: !input second_message
+              language: en-US
+              options:
+                gender: MALE
+                voice: en-US-Casual-K
 mode: single
