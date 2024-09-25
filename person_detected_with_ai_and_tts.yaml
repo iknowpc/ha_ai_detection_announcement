@@ -1,7 +1,7 @@
 blueprint:
-  name: Person Detected with AI and TTS (with Image Reprocessing)
+  name: Person Detected with AI and TTS (Reprocess with Two Instruction Sets)
   description: >
-    Detect a person, analyze the image with AI, and announce the message using TTS. After 30 seconds, reprocesses the image if the person detection sensor is still on.
+    Detect a person, analyze the image with AI, and announce the message using TTS. After 30 seconds, reprocesses the image with a second set of instructions if the person detection sensor is still on.
   domain: automation
   input:
     trigger_sensor:
@@ -47,18 +47,9 @@ blueprint:
     second_image_instructions:
       name: Second Image Instructions
       description: >
-        Instructions for the AI image analysis after the 30-second check.
+        Instructions for the AI image analysis after the 30-second check if the sensor is still on.
       default: >
-        You are still trespassing, and we will take further action. Please leave immediately.
-      selector:
-        text:
-          multiline: true
-    second_message:
-      name: Second Message
-      description: >
-        The second message to announce after 30 seconds if the sensor is still on, based on the new image analysis.
-      default: >
-        You are still trespassing, and the authorities have been contacted. Leave the premises immediately.
+        The person or persons are still visible. Describe what they are doing now, and if they continue to trespass.
       selector:
         text:
           multiline: true
@@ -113,13 +104,4 @@ action:
               image_entity:
                 - !input camera_entity
               message: !input second_image_instructions
-            response_variable: second_response
-          - service: tts.google_cloud_say
-            data:
-              entity_id: !input media_player_entity
-              message: "{{second_response.response_text}}"
-              language: en-US
-              options:
-                gender: MALE
-                voice: en-US-Casual-K
 mode: single
