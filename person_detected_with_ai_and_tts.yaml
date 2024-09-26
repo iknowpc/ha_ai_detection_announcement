@@ -56,57 +56,59 @@ blueprint:
     delay_duration:
       name: Delay Duration (Seconds)
       description: >
-        Choose how many seconds to wait before reprocessing the image (0 to 120 seconds).
+        Choose how many seconds to wait before reprocessing the image (1 to 120 seconds).
       default: 30
       selector:
         number:
-          min: 0
+          min: 1
           max: 120
           step: 1
-trigger:
-  - platform: state
-    entity_id: !input trigger_sensor
-    to: "on"
-condition: []
-action:
-  - service: llmvision.image_analyzer
-    data:
-      provider: OpenAI
-      model: gpt-4o
-      include_filename: false
-      target_width: 1280
-      detail: high
-      max_tokens: 221
-      temperature: 0.5
-      image_entity:
-        - !input camera_entity
-      message: !input image_instructions
-    response_variable: response
-  - service: media_player.volume_set
-    target:
-      entity_id: !input media_player_entity
-    data:
-      volume_level: !input volume_level
-  - service: tts.google_cloud_say
-    data:
-      entity_id: !input media_player_entity
-      message: "{{response.response_text}}"
-      language: en-US
-      options:
-        gender: MALE
-        voice: en-US-Casual-K
-  - delay:
-      seconds: !input delay_duration  # Use slider-configurable delay in seconds
-  - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
-    data:
-      provider: OpenAI
-      model: gpt-4o
-      include_filename: false
-      target_width: 1280
-      detail: high
-      max_tokens: 221
-      temperature: 0.5
-      image_entity:
-        - !input camera_entity
-      message: !input after_30s_instructions  # Use the configurable instructions after the delay
-mode: single
+          mode: slider
+          unit_of_measurement: "seconds"
+  trigger:
+    - platform: state
+      entity_id: !input trigger_sensor
+      to: "on"
+  condition: []
+  action:
+    - service: llmvision.image_analyzer
+      data:
+        provider: OpenAI
+        model: gpt-4o
+        include_filename: false
+        target_width: 1280
+        detail: high
+        max_tokens: 221
+        temperature: 0.5
+        image_entity:
+          - !input camera_entity
+        message: !input image_instructions
+      response_variable: response
+    - service: media_player.volume_set
+      target:
+        entity_id: !input media_player_entity
+      data:
+        volume_level: !input volume_level
+    - service: tts.google_cloud_say
+      data:
+        entity_id: !input media_player_entity
+        message: "{{response.response_text}}"
+        language: en-US
+        options:
+          gender: MALE
+          voice: en-US-Casual-K
+    - delay:
+        seconds: !input delay_duration  # Use slider-configurable delay in seconds
+    - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
+      data:
+        provider: OpenAI
+        model: gpt-4o
+        include_filename: false
+        target_width: 1280
+        detail: high
+        max_tokens: 221
+        temperature: 0.5
+        image_entity:
+          - !input camera_entity
+        message: !input after_30s_instructions  # Use the configurable instructions after the delay
+  mode: single
