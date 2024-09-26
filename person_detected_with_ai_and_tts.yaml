@@ -1,7 +1,8 @@
 blueprint:
   name: Person Detected with AI and TTS (Reprocess with Two Configurable Instruction Sets and Slider for Delay)
   description: >
-    Detect a person, analyze the image with AI, and announce the message using TTS. After a user-configurable delay (via slider), reprocesses the image with a second set of configurable instructions.
+    Detect a person, analyze the image with AI, and announce the message using TTS.
+    After a user-configurable delay (via slider), reprocess the image with a second set of configurable instructions.
   domain: automation
   input:
     trigger_sensor:
@@ -44,7 +45,7 @@ blueprint:
       selector:
         text:
           multiline: true
-    after_30s_instructions:
+    after_delay_instructions:
       name: After Delay Instructions
       description: >
         Instructions for the AI image analysis after the configurable delay, regardless of sensor state.
@@ -65,50 +66,68 @@ blueprint:
           step: 1
           mode: slider
           unit_of_measurement: "seconds"
-  trigger:
-    - platform: state
-      entity_id: !input trigger_sensor
-      to: "on"
-  condition: []
-  action:
-    - service: llmvision.image_analyzer
-      data:
-        provider: OpenAI
-        model: gpt-4o
-        include_filename: false
-        target_width: 1280
-        detail: high
-        max_tokens: 221
-        temperature: 0.5
-        image_entity:
-          - !input camera_entity
-        message: !input image_instructions
-      response_variable: response
-    - service: media_player.volume_set
-      target:
-        entity_id: !input media_player_entity
-      data:
-        volume_level: !input volume_level
-    - service: tts.google_cloud_say
-      data:
-        entity_id: !input media_player_entity
-        message: "{{response.response_text}}"
-        language: en-US
-        options:
-          gender: MALE
-          voice: en-US-Casual-K
-    - delay:
-        seconds: !input delay_duration  # Use slider-configurable delay in seconds
-    - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
-      data:
-        provider: OpenAI
-        model: gpt-4o
-        include_filename: false
-        target_width: 1280
-        detail: high
-        max_tokens: 221
-        temperature: 0.5
-        image_entity:
-          - !input camera_entity
-        message: !input after_30s_instructions  # Use the configurable instructions after the delay
-  mode: single
+
+trigger:
+  - platform: state
+    entity_id: !input trigger_sensor
+    to: "on"
+
+condition: []
+
+action:
+  - service: llmvision.image_analyzer
+    data:
+      provider: OpenAI
+      model: gpt-4o  # Ensure this is the correct model name
+      include_filename: false
+      target_width: 1280
+      detail: high
+      max_tokens: 221
+      temperature: 0.5
+      image_entity: !input camera_entity
+      message: !input image_instructions
+    # Store the response in a variable
+    # Home Assistant uses `variables` for storing data from service calls
+    # Assuming `llmvision.image_analyzer` returns a JSON response
+  - variables:
+      response: "{{ state_attr('sensor.llmvision_response', 'response_text') }}"
+      # Replace 'sensor.llmvision_response' with the actual sensor/entity that holds the response
+  - service: media_player.volume_set
+    target:
+      entity_id: !input media_player_entity
+    data:
+      volume_level: !input volume_level
+  - service: tts.google_cloud_say
+    data:
+      entity_id: !input media_player_entity
+      message: "{{ response }}"
+      language: en-US
+      options:
+        gender: MALE
+        voice: en-US-Casual-K
+  - delay:
+      seconds: !input delay_duration  # Use slider-configurable delay in seconds
+  - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
+    data:
+      provider: OpenAI
+      model: gpt-4o  # Ensure this is the correct model name
+      include_filename: false
+      target_width: 1280
+      detail: high
+      max_tokens: 221
+      temperature: 0.5
+      image_entity: !input camera_entity
+      message: !input after_delay_instructions
+  - variables:
+      second_response: "{{ state_attr('sensor.llmvision_second_response', 'response_text') }}"
+      # Replace 'sensor.llmvision_second_response' with the actual sensor/entity that holds the second response
+  - service: tts.google_cloud_say
+    data:
+      entity_id: !input media_player_entity
+      message: "{{ second_response }}"
+      language: en-US
+      options:
+        gender: MALE
+        voice: en-US-Casual-K
+
+mode: single
