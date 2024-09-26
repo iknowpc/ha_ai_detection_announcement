@@ -95,8 +95,8 @@ action:
         gender: MALE
         voice: en-US-Casual-K
   - delay:
-      seconds: !input delay_duration  # Use manually entered delay in seconds
-  - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
+      seconds: !input delay_duration
+  - service: llmvision.image_analyzer
     data:
       provider: OpenAI
       model: gpt-4o
@@ -107,5 +107,5 @@ action:
       temperature: 0.5
       image_entity:
         - !input camera_entity
-      message: !input after_30s_instructions  # Use the configurable instructions after the delay
+      message: !input after_30s_instructions
 mode: single
