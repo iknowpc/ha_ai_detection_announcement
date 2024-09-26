@@ -1,7 +1,7 @@
 blueprint:
-  name: Person Detected with AI and TTS (Reprocess with Two Configurable Instruction Sets and Delay)
+  name: Person Detected with AI and TTS (Reprocess with Two Configurable Instruction Sets and Slider for Delay)
   description: >
-    Detect a person, analyze the image with AI, and announce the message using TTS. After a configurable delay, reprocesses the image with a second set of configurable instructions without checking the sensor state again.
+    Detect a person, analyze the image with AI, and announce the message using TTS. After a user-configurable delay (via slider), reprocesses the image with a second set of configurable instructions.
   domain: automation
   input:
     trigger_sensor:
@@ -56,10 +56,13 @@ blueprint:
     delay_duration:
       name: Delay Duration
       description: >
-        Configure how long to wait before reprocessing the image (format: hh:mm:ss).
-      default: "00:00:30"
+        Choose how many seconds to wait before reprocessing the image (0 to 120 seconds).
+      default: 30
       selector:
-        time:
+        number:
+          min: 0
+          max: 120
+          step: 1
 trigger:
   - platform: state
     entity_id: !input trigger_sensor
@@ -92,7 +95,8 @@ action:
       options:
         gender: MALE
         voice: en-US-Casual-K
-  - delay: !input delay_duration  # Use configurable delay
+  - delay:
+      seconds: !input delay_duration  # Use slider-configurable delay in seconds
   - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
     data:
       provider: OpenAI
