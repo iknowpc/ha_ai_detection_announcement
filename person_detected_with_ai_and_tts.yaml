@@ -54,7 +54,7 @@ blueprint:
         text:
           multiline: true
     delay_duration:
-      name: Delay Duration
+      name: Delay Duration (Seconds)
       description: >
         Choose how many seconds to wait before reprocessing the image (0 to 120 seconds).
       default: 30
