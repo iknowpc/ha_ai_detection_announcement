@@ -1,9 +1,7 @@
 blueprint:
-  name: Person Detected with AI and TTS (Reprocess with Two Configurable Instruction Sets)
+  name: Person Detected with AI and TTS (Reprocess with Configurable Delay)
   description: >
-    Detect a person, analyze the image with AI, and announce the message using TTS.
-    After a user-defined delay, reprocesses the image with a second set of configurable instructions
-    without checking the sensor state again.
+    Detect a person, analyze the image with AI, and announce the message using TTS. After a configurable delay (entered manually in seconds), reprocesses the image with a second set of configurable instructions.
   domain: automation
   input:
     trigger_sensor:
@@ -46,7 +44,7 @@ blueprint:
       selector:
         text:
           multiline: true
-    after_delay_instructions:
+    after_30s_instructions:
       name: After Delay Instructions
       description: >
         Instructions for the AI image analysis after the configurable delay, regardless of sensor state.
@@ -55,31 +53,26 @@ blueprint:
       selector:
         text:
           multiline: true
-    delay_seconds:
-      name: Delay Before Reprocessing (seconds)
+    delay_duration:
+      name: Delay Duration (Seconds)
       description: >
-        Delay before reprocessing the image with the second set of instructions.
-        Must be between 1 and 120 seconds.
+        Enter how many seconds to wait before reprocessing the image (0 to 120 seconds).
       default: 30
       selector:
         number:
-          min: 1
+          min: 0
           max: 120
-          mode: slider
           step: 1
-
 trigger:
   - platform: state
     entity_id: !input trigger_sensor
     to: "on"
-
 condition: []
-
 action:
   - service: llmvision.image_analyzer
     data:
       provider: OpenAI
-      model: gpt-4
+      model: gpt-4o
       include_filename: false
       target_width: 1280
       detail: high
@@ -97,17 +90,17 @@ action:
   - service: tts.google_cloud_say
     data:
       entity_id: !input media_player_entity
-      message: "{{ response.response_text }}"
+      message: "{{response.response_text}}"
       language: en-US
       options:
         gender: MALE
         voice: en-US-Casual-K
   - delay:
-      seconds: !input delay_seconds  # Configurable delay
-  - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
+      seconds: !input delay_duration  # Delay based on manual input in seconds
+  - service: llmvision.image_analyzer  # Reprocess the image after the delay
     data:
       provider: OpenAI
-      model: gpt-4
+      model: gpt-4o
       include_filename: false
       target_width: 1280
       detail: high
@@ -115,6 +108,5 @@ action:
       temperature: 0.5
       image_entity:
         - !input camera_entity
-      message: !input after_delay_instructions  # Use the configurable instructions after the delay
-
+      message: !input after_30s_instructions
 mode: single
