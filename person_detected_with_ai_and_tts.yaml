@@ -78,7 +78,7 @@ action:
   - service: llmvision.image_analyzer
     data:
       provider: OpenAI
-      model: gpt-4o  # Ensure this is the correct model name
+      model: gpt-4  # Corrected model name
       include_filename: false
       target_width: 1280
       detail: high
@@ -86,12 +86,14 @@ action:
       temperature: 0.5
       image_entity: !input camera_entity
       message: !input image_instructions
-    # Store the response in a variable
-    # Home Assistant uses `variables` for storing data from service calls
-    # Assuming `llmvision.image_analyzer` returns a JSON response
+    # Assuming the service sets an attribute or state that we can access
+  - wait_for_trigger:
+      - platform: state
+        entity_id: sensor.llmvision_response  # Replace with your actual sensor/entity
+        to: "available"  # Replace with the actual state that indicates the response is ready
+    timeout: "00:00:30"  # Adjust the timeout as needed
   - variables:
-      response: "{{ state_attr('sensor.llmvision_response', 'response_text') }}"
-      # Replace 'sensor.llmvision_response' with the actual sensor/entity that holds the response
+      response: "{{ state_attr('sensor.llmvision_response', 'response_text') }}"  # Adjust based on actual attributes
   - service: media_player.volume_set
     target:
       entity_id: !input media_player_entity
@@ -110,7 +112,7 @@ action:
   - service: llmvision.image_analyzer  # Reprocess the image with new instructions after the delay
     data:
       provider: OpenAI
-      model: gpt-4o  # Ensure this is the correct model name
+      model: gpt-4  # Corrected model name
       include_filename: false
       target_width: 1280
       detail: high
@@ -118,9 +120,13 @@ action:
       temperature: 0.5
       image_entity: !input camera_entity
       message: !input after_delay_instructions
+  - wait_for_trigger:
+      - platform: state
+        entity_id: sensor.llmvision_second_response  # Replace with your actual sensor/entity
+        to: "available"  # Replace with the actual state that indicates the response is ready
+    timeout: "00:00:30"  # Adjust the timeout as needed
   - variables:
-      second_response: "{{ state_attr('sensor.llmvision_second_response', 'response_text') }}"
-      # Replace 'sensor.llmvision_second_response' with the actual sensor/entity that holds the second response
+      second_response: "{{ state_attr('sensor.llmvision_second_response', 'response_text') }}"  # Adjust based on actual attributes
   - service: tts.google_cloud_say
     data:
       entity_id: !input media_player_entity
