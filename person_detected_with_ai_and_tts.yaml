@@ -1,7 +1,7 @@
 blueprint:
-  name: Person Detected with AI and TTS (Reprocess with Two Configurable Instruction Sets and Manual Input for Delay)
+  name: Person Detected with AI and TTS (Reprocess with Two Configurable Instruction Sets)
   description: >
-    Detect a person, analyze the image with AI, and announce the message using TTS. After a user-configurable delay (entered manually), reprocesses the image with a second set of configurable instructions.
+    Detect a person, analyze the image with AI, and announce the message using TTS. After 30 seconds, reprocesses the image with a second set of configurable instructions without checking the sensor state again.
   domain: automation
   input:
     trigger_sensor:
@@ -45,23 +45,14 @@ blueprint:
         text:
           multiline: true
     after_30s_instructions:
-      name: After Delay Instructions
+      name: After 30 Seconds Instructions
       description: >
-        Instructions for the AI image analysis after the configurable delay, regardless of sensor state.
+        Instructions for the AI image analysis after 30 seconds, regardless of sensor state.
       default: >
         Reanalyze the image and provide an update on what the person or persons are doing now.
       selector:
         text:
           multiline: true
-    delay_duration:
-      name: Delay Duration (Seconds)
-      description: >
-        Enter how many seconds to wait before reprocessing the image (0 to 120 seconds).
-      default: 30
-      selector:
-        number:
-          min: 0
-          max: 120
 trigger:
   - platform: state
     entity_id: !input trigger_sensor
@@ -94,9 +85,8 @@ action:
       options:
         gender: MALE
         voice: en-US-Casual-K
-  - delay:
-      seconds: !input delay_duration
-  - service: llmvision.image_analyzer
+  - delay: "00:00:30"  # Wait for 30 seconds
+  - service: llmvision.image_analyzer  # Reprocess the image with new instructions after 30 seconds
     data:
       provider: OpenAI
       model: gpt-4o
@@ -107,5 +97,5 @@ action:
       temperature: 0.5
       image_entity:
         - !input camera_entity
-      message: !input after_30s_instructions
+      message: !input after_30s_instructions  # Use the configurable instructions after 30 seconds
 mode: single
